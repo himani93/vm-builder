@@ -1,0 +1,58 @@
+{
+  "_comment": "Build with `packer build kubernetes.json`",
+  "builders":
+  [
+    {
+      "type": "qemu",
+      "iso_url": "{{ user `cloud_image_url` }}",
+      "iso_checksum": "{{ user `cloud_image_checksum` }}",
+      "iso_checksum_type": "{{ user `cloud_image_checksum_type` }}",
+      "format": "qcow2",
+      "disk_image": true,
+      "disk_size": "{{ user `disk_size` }}",
+      "output_directory": "kubernetes-output",
+      "disk_compression": true,
+      "headless": true,
+      "accelerator": "none",
+      "ssh_username": "{{ user `ssh_username` }}",
+      "ssh_password": "{{ user `ssh_password` }}",
+      "ssh_port": 22,
+      "ssh_wait_timeout": "300s",
+      "vm_name": "{{ user `vm_name` }}",
+      "use_default_display": false,
+      "qemuargs": [
+        ["-m", "{{ user `memory` }}"],
+        ["-smp", "cpus={{ user `cpus` }}"],
+        ["-fda", "{{ user `cloud_init_image` }}"],
+        ["-serial", "mon:stdio"]
+      ]
+    }
+  ],
+  "provisioners": [
+    {
+      "execute_command": "echo '{{ user `ssh_password` }}' | {{.Vars}} sudo -E -S bash -x '{{.Path}}'",
+      "scripts": [
+        "build-scripts/setup-docker.sh",
+        "build-scripts/setup-kubernetes.sh"
+      ],
+      "type": "shell"
+    },
+    {
+      "type": "shell",
+      "inline": ["sudo sync"]
+    }
+  ],
+  "variables": {
+    "cpus": "2",
+    "cloud_image_checksum": "cfaaf2eb8349626b5e4fdba6f3f7afe2ad5ed5949929c37b0e7c33ec59a9f46c",
+    "cloud_image_checksum_type": "sha256",
+    "cloud_image_url" : "/home/carbon/dev/github.com/himani93/vm-builder/base-images/bionic-server-cloudimg-amd64.img",
+    "cloud_init_image": "packer.init",
+    "disk_size": "6000",
+    "memory": "2048M",
+    "ssh_username": "ubuntu",
+    "ssh_password": "dummy_password",
+    "version": "1.15.0",
+    "vm_name": "kubernetes"
+  }
+}
